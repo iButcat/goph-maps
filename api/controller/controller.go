@@ -3,10 +3,26 @@ package controller
 import (
 	"log"
 
+	"goph-maps/service"
+
 	"github.com/gin-gonic/gin"
 )
 
-func GetShortestPath(ctx *gin.Context) {
+type Controller interface {
+	GetShortestPath(ctx *gin.Context)
+}
+
+type controller struct {
+	service service.Service
+}
+
+func NewController(service service.Service) Controller {
+	return &controller{
+		service: service,
+	}
+}
+
+func (c *controller) GetShortestPath(ctx *gin.Context) {
 	var getShortestPathRequest struct {
 		start  float64 `json:"start"`
 		finish float64 `json:"finish"`
