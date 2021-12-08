@@ -31,6 +31,8 @@
       "not dead",
       "not op_mini all"
     ],
-    "development": [ "defaults" ]
+    "development": [
+      "defaults"
+    ]
   }
 }
