@@ -10,6 +10,7 @@ import (
 
 	"goph-maps/controller"
 	"goph-maps/service"
+	"goph-maps/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iButcat/repository"
@@ -46,6 +47,10 @@ func main() {
 		fmt.Println("path: ", path)
 
 	*/
+
+	if err := utils.FileContentToStruct("mets.geojson"); err != nil {
+		panic(err)
+	}
 
 	var db *gorm.DB
 	{
