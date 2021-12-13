@@ -3,18 +3,19 @@ package internal
 import (
 	"bytes"
 	"fmt"
+	"goph-maps/models"
 )
 
 type Graph struct {
-	Vertices []*Vertice
+	Vertices []*Vertice `json:   "vertices"`
 
 	directed bool
 }
 
 type Vertice struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Ajdacentes map[int]int
+	ID         int                        `json:   "id"`
+	Point      models.Point               `json:   "point"`
+	Ajdacentes map[int]*models.LineString `json:   "adjacentes"`
 }
 
 func NewGraph(directed bool) *Graph {
@@ -26,22 +27,25 @@ func NewGraph(directed bool) *Graph {
 	return &Graph{}
 }
 
-func (g *Graph) Add(name string) {
-	id := len(g.Vertices)
-	if !contains(g.Vertices, name) {
+var (
+	id int = -1
+)
+
+func (g *Graph) Add(point models.Point) {
+	if !contains(g.Vertices, point.Name) {
+		id++
 		g.Vertices = append(g.Vertices, &Vertice{
 			ID:         id,
-			Name:       name,
-			Ajdacentes: make(map[int]int),
+			Point:      point,
+			Ajdacentes: make(map[int]*models.LineString),
 		})
 	} else {
-		fmt.Println("Already exists")
 		return
 	}
 }
 
-func (g *Graph) AddEdge(from, to, distance int) {
-	v1 := g.Vertices[from]
+func (g *Graph) AddEdge(from, to int, road models.LineString) {
+	v1 := g.Vertices[from] // bug index out of range
 	v2 := g.Vertices[to]
 
 	if v1 == nil || v2 == nil {
@@ -52,15 +56,15 @@ func (g *Graph) AddEdge(from, to, distance int) {
 		fmt.Println(ok)
 		return
 	}
-	v1.Ajdacentes[v2.ID] = distance
+	v1.Ajdacentes[v2.ID] = &road
 	if !g.directed {
-		v2.Ajdacentes[v1.ID] = distance
+		v2.Ajdacentes[v1.ID] = &road
 	}
 }
 
 func (g *Graph) GetVertexFromName(name string) *Vertice {
 	for index, value := range g.Vertices {
-		if value.Name == name {
+		if value.Point.Name == name {
 			return g.Vertices[index]
 		}
 	}
@@ -69,7 +73,7 @@ func (g *Graph) GetVertexFromName(name string) *Vertice {
 
 func (g *Graph) GetVertexFromID(id int) *Vertice {
 	for index, value := range g.Vertices {
-		if value.ID == id {
+		if value.Point.ID == id {
 			return g.Vertices[index]
 		}
 	}
@@ -78,7 +82,7 @@ func (g *Graph) GetVertexFromID(id int) *Vertice {
 
 func contains(points []*Vertice, name string) bool {
 	for _, value := range points {
-		if value.Name == name {
+		if value.Point.Name == name {
 			return true
 		}
 	}
@@ -100,7 +104,8 @@ func (g *Graph) String() string {
 	for v, b := range g.Vertices {
 		for w := range b.Ajdacentes {
 			buffer.WriteString(fmt.Sprintf("%s - %s \n",
-				g.GetVertexFromID(v).Name, g.GetVertexFromID(w).Name))
+				g.GetVertexFromID(v).Point.Name,
+				g.GetVertexFromID(w).Point.Name))
 		}
 	}
 	return buffer.String()
@@ -110,11 +115,11 @@ func (g *Graph) Neighbors(id int) []int {
 	var neighbors = make([]int, len(g.Vertices))
 	for _, node := range g.Vertices {
 		for edge := range node.Ajdacentes {
-			if node.ID == id {
+			if node.Point.ID == id {
 				neighbors = append(neighbors, edge)
 			}
 			if edge == id {
-				neighbors = append(neighbors, node.ID)
+				neighbors = append(neighbors, node.Point.ID)
 			}
 		}
 	}
@@ -125,7 +130,7 @@ func (g *Graph) Edges() [][3]int {
 	var edges = make([][3]int, 0, len(g.Vertices))
 	for i := 0; i < len(g.Vertices); i++ {
 		for k, v := range g.Vertices[i].Ajdacentes {
-			edges = append(edges, [3]int{i, k, int(v)})
+			edges = append(edges, [3]int{i, k, int(v.Geometry[0][0])})
 		}
 	}
 	return edges
@@ -140,10 +145,10 @@ func (g *Graph) Nodes() []int {
 }
 
 func (g *Graph) BFS(startingNode *Vertice, destination string) []Vertice {
-	fmt.Println("starting node name: ", startingNode.Name)
+	fmt.Println("starting node name: ", startingNode.Point.Name)
 	var res []Vertice
 	var visited = make(map[string]bool)
-	visited[startingNode.Name] = true
+	visited[startingNode.Point.Name] = true
 
 	var queue = queue{}
 	queue.enqueue(startingNode)
@@ -151,17 +156,18 @@ func (g *Graph) BFS(startingNode *Vertice, destination string) []Vertice {
 	for !queue.isEmpty() {
 		s := queue.dequeue()
 
-		fmt.Println("current node: ", s.Name)
+		fmt.Println("current node: ", s.Point.Name)
 
-		if s.Name == destination {
+		if s.Point.Name == destination {
 			return res
 		}
 
-		for index, _ := range s.Ajdacentes {
-			if !visited[g.GetVertexFromID(index).Name] {
+		for index, value := range s.Ajdacentes {
+			fmt.Println(value)
+			if !visited[g.GetVertexFromID(index).Point.Name] {
 				queue.enqueue(g.Vertices[index])
 				res = append(res, *g.Vertices[index])
-				visited[g.Vertices[index].Name] = true
+				visited[g.Vertices[index].Point.Name] = true
 			}
 		}
 	}

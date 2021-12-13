@@ -10,7 +10,9 @@ import (
 
 	"goph-maps/controller"
 	"goph-maps/service"
+	"goph-maps/utils"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/iButcat/repository"
 	"gorm.io/driver/sqlite"
@@ -18,34 +20,8 @@ import (
 )
 
 func main() {
-	/*
-		graph := internal.Graph{}
 
-		graph.Add("Tokyo")       // 0
-		graph.Add("Beijing")     // 1
-		graph.Add("Bangui")      // 2
-		graph.Add("Berlin")      // 3
-		graph.Add("Luxembourg")  // 4
-		graph.Add("Mexico City") // 5
-		graph.Add("Oslo")        // 6
-		graph.Add("Bucharest")   // 7
-		graph.Add("Singapore")   // 8
-		graph.Add("Madrid")      // 9
-
-		graph.AddEdge(0, 1, 100)
-		graph.AddEdge(1, 2, 110)
-		graph.AddEdge(2, 3, 120)
-		graph.AddEdge(3, 4, 130)
-		graph.AddEdge(4, 5, 140)
-		graph.AddEdge(5, 6, 150)
-		graph.AddEdge(6, 7, 160)
-		graph.AddEdge(7, 8, 170)
-		graph.AddEdge(8, 9, 180)
-
-		path := graph.BFS(graph.GetVertexFromID(4), "Bucharest")
-		fmt.Println("path: ", path)
-
-	*/
+	utils.GeoJsonToStruct("mets.geojson")
 
 	var db *gorm.DB
 	{
@@ -61,7 +37,19 @@ func main() {
 	controller := controller.NewController(service)
 
 	var router = gin.New()
+
+	router.Use(gin.Logger())
+	router.Use(gin.Recovery())
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "OPTIONS", "PUT"},
+		AllowHeaders:     []string{"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "accept", "origin", "Cache-Control", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+	}))
+
 	router.GET("/test", controller.GetShortestPath)
+	router.GET("/hello", controller.DisplayPointandLineString)
 
 	errs := make(chan error, 1)
 
@@ -73,8 +61,6 @@ func main() {
 
 	go func() {
 		log.Println("Starting server...")
-		fileServer := http.FileServer(http.Dir("./static"))
-		http.Handle("/", fileServer)
 		errs <- http.ListenAndServe(":8080", router)
 	}()
 
