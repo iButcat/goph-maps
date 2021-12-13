@@ -7,15 +7,15 @@ import (
 )
 
 type Graph struct {
-	Vertices []*Vertice
+	Vertices []*Vertice `json:   "vertices"`
 
 	directed bool
 }
 
 type Vertice struct {
-	ID         int
-	Point      models.Point
-	Ajdacentes map[int]*models.LineString
+	ID         int                        `json:   "id"`
+	Point      models.Point               `json:   "point"`
+	Ajdacentes map[int]*models.LineString `json:   "adjacentes"`
 }
 
 func NewGraph(directed bool) *Graph {
@@ -45,7 +45,6 @@ func (g *Graph) Add(point models.Point) {
 }
 
 func (g *Graph) AddEdge(from, to int, road models.LineString) {
-	fmt.Println("from id: ", from)
 	v1 := g.Vertices[from] // bug index out of range
 	v2 := g.Vertices[to]
 
@@ -53,13 +52,13 @@ func (g *Graph) AddEdge(from, to int, road models.LineString) {
 		panic("error not all vertices exist")
 	}
 
-	if _, ok := v1.Ajdacentes[v2.Point.ID]; ok {
+	if _, ok := v1.Ajdacentes[v2.ID]; ok {
 		fmt.Println(ok)
 		return
 	}
-	v1.Ajdacentes[v2.Point.ID] = &road
+	v1.Ajdacentes[v2.ID] = &road
 	if !g.directed {
-		v2.Ajdacentes[v1.Point.ID] = &road
+		v2.Ajdacentes[v1.ID] = &road
 	}
 }
 

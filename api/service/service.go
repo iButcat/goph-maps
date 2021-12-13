@@ -27,3 +27,7 @@ func (s *service) Save(ctx context.Context) {
 	test.Test = "hello"
 	s.repository.Create(ctx, &test)
 }
+
+func (s *service) GetAll(ctx context.Context) {
+
+}

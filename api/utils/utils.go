@@ -5,6 +5,7 @@ import (
 	"goph-maps/internal"
 	"goph-maps/models"
 	"io/ioutil"
+	"log"
 	"strconv"
 
 	geojson "github.com/paulmach/go.geojson"
@@ -33,6 +34,8 @@ func parseGeoJsonContent(fileName string) (*geojson.FeatureCollection, error) {
 	return collectionFeatures, nil
 }
 
+var Graph = &internal.Graph{}
+
 func GeoJsonToStruct(fileName string) {
 	collectionFeatures, err := parseGeoJsonContent(fileName)
 	if err != nil {
@@ -40,7 +43,7 @@ func GeoJsonToStruct(fileName string) {
 	}
 
 	features := collectionFeatures.Features
-	graph := internal.NewGraph(false)
+	Graph = internal.NewGraph(false)
 	var sliceLineString []*models.LineString
 	for i := 0; i < len(features); i++ {
 
@@ -52,7 +55,7 @@ func GeoJsonToStruct(fileName string) {
 			point := models.NewPoint(convertIDToInt,
 				features[i].Properties["name"].(string),
 				features[i].Geometry.Point)
-			graph.Add(*point)
+			Graph.Add(*point)
 			point = &models.Point{}
 		}
 
@@ -65,19 +68,28 @@ func GeoJsonToStruct(fileName string) {
 		}
 	}
 
-	for i := 0; i < len(graph.Vertices); i++ {
-		for q := i + 1; q < len(graph.Vertices); q++ {
+	for i := 0; i < len(Graph.Vertices); i++ {
+		for q := i + 1; q < len(Graph.Vertices); q++ {
 			for j := 0; j < len(sliceLineString); j++ {
 				ele := getFirstAndLastCoordinates(sliceLineString[j].Geometry)
 
-				if equal(ele[0], graph.Vertices[i].Point.Geometry) && equal(ele[1], graph.Vertices[q].Point.Geometry) {
-					graph.AddEdge(graph.Vertices[i].ID, graph.Vertices[q].ID, *sliceLineString[j])
+				if equal(ele[0], Graph.Vertices[i].Point.Geometry) && equal(ele[1], Graph.Vertices[q].Point.Geometry) {
+					if Graph.Vertices[q].ID > len(Graph.Vertices) {
+						log.Println("problem with index")
+					} else {
+						Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
+					}
 				}
 			}
 		}
 	}
 }
 
+func AddEdges() {
+
+}
+
+// Check if both slice are equal
 func equal(a, b []float64) bool {
 	if len(a) != len(b) {
 		return false
