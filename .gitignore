@@ -1,4 +1,4 @@
 ./client/node_modules
 yarn.lock
-./api/simple.db
-./api/mets.geojson
+api/simple.db
+api/mets.geojson
