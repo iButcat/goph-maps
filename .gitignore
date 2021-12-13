@@ -2,3 +2,5 @@
 yarn.lock
 api/simple.db
 api/mets.geojson
+.DS_Store
+.vscode
