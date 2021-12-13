@@ -2,8 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"goph-maps/internal"
 	"goph-maps/models"
 	"io/ioutil"
+	"strconv"
 
 	geojson "github.com/paulmach/go.geojson"
 )
@@ -17,10 +19,10 @@ func readGeoJsonFile(fileName string) ([]byte, error) {
 	return file, nil
 }
 
-func FileContentToStruct(fileName string) error {
+func parseGeoJsonContent(fileName string) (*geojson.FeatureCollection, error) {
 	geojsonContent, err := readGeoJsonFile(fileName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	collectionFeatures, err := geojson.UnmarshalFeatureCollection(geojsonContent)
@@ -28,49 +30,83 @@ func FileContentToStruct(fileName string) error {
 		panic(err)
 	}
 
-	fmt.Println("features collections type: ", collectionFeatures.Type)
+	return collectionFeatures, nil
+}
+
+func GeoJsonToStruct(fileName string) {
+	collectionFeatures, err := parseGeoJsonContent(fileName)
+	if err != nil {
+		panic(err)
+	}
+
 	features := collectionFeatures.Features
+	graph := internal.NewGraph(false)
+	var sliceLineString []*models.LineString
 	for i := 0; i < len(features); i++ {
+
 		if features[i].Geometry.IsPoint() {
-			fmt.Println("----------------------")
-			point := models.NewPoint(features[i].Properties["id"].(string),
+			convertIDToInt, err := strconv.Atoi(features[i].Properties["id"].(string))
+			if err != nil {
+				fmt.Println(err)
+			}
+			point := models.NewPoint(convertIDToInt,
 				features[i].Properties["name"].(string),
 				features[i].Geometry.Point)
-			fmt.Println("point: ", point)
-			fmt.Println("----------------------")
+			graph.Add(*point)
 			point = &models.Point{}
 		}
 
 		if features[i].Geometry.IsLineString() {
-			fmt.Println("----------------------")
 			lineString := models.NewLineString(features[i].Properties["route_id"].(string),
 				features[i].Properties["route_long_name"].(string),
 				features[i].Geometry.LineString)
-			fmt.Println("line string: ", lineString)
-			fmt.Println("----------------------")
+			sliceLineString = append(sliceLineString, lineString)
 			lineString = &models.LineString{}
 		}
 	}
 
-	return nil
-}
+	for i := 0; i < len(graph.Vertices); i++ {
+		for q := i + 1; q < len(graph.Vertices); q++ {
+			for j := 0; j < len(sliceLineString); j++ {
+				ele := getFirstAndLastCoordinates(sliceLineString[j].Geometry)
 
-/*
-func smh() {
-	for i := 0; i < len(features); i++ {
-		for j := i + 1; j < len(features); j++ {
-
-			if features[i].Geometry.IsPoint() {
-				point.New(features[i])
-				fmt.Println("point: ", point)
-				break
-			}
-
-			if features[i].Geometry.IsPoint() && features[j].Geometry.IsLineString() &&
-				features[j].Geometry.LineString[0][0] == features[i].Geometry.Point[0] {
-				fmt.Println("YES")
+				if equal(ele[0], graph.Vertices[i].Point.Geometry) && equal(ele[1], graph.Vertices[q].Point.Geometry) {
+					graph.AddEdge(graph.Vertices[i].ID, graph.Vertices[q].ID, *sliceLineString[j])
+				}
 			}
 		}
 	}
 }
-*/
+
+func equal(a, b []float64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// First array and last are the coordinate of a point.
+func getFirstAndLastCoordinates(lineStringGeometry [][]float64) [][]float64 {
+	var coordinates [][]float64
+	coordinates = append(coordinates, lineStringGeometry[0])
+	coordinates = append(coordinates, lineStringGeometry[len(lineStringGeometry)-1])
+	return coordinates
+}
+
+func checkifCoordinatesForEdges(lineStringGeometry [][]int, pointGeometry []int) bool {
+	for _, value := range lineStringGeometry {
+		for _, val := range value {
+			for _, v := range pointGeometry {
+				if val == v {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}

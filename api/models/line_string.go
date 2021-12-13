@@ -1,5 +1,10 @@
 package models
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 type LineString struct {
 	ID       string      `json:"id"`
 	Name     string      `json:"name"`
@@ -12,4 +17,16 @@ func NewLineString(id, name string, geometry [][]float64) *LineString {
 		Name:     name,
 		Geometry: geometry,
 	}
+}
+
+func (l *LineString) Print() {
+	fmt.Println("lineString: ", l)
+}
+
+func (l *LineString) String() string {
+	str, err := json.Marshal(l)
+	if err != nil {
+		panic(err)
+	}
+	return string(str)
 }
