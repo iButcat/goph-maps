@@ -28,12 +28,12 @@ func NewGraph(directed bool) *Graph {
 }
 
 var (
-	id int
+	id int = -1
 )
 
 func (g *Graph) Add(point models.Point) {
-	id++
 	if !contains(g.Vertices, point.Name) {
+		id++
 		g.Vertices = append(g.Vertices, &Vertice{
 			ID:         id,
 			Point:      point,
