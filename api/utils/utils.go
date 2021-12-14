@@ -5,6 +5,7 @@ import (
 	"goph-maps/internal"
 	"goph-maps/models"
 	"io/ioutil"
+	"log"
 	"strconv"
 
 	geojson "github.com/paulmach/go.geojson"
@@ -80,6 +81,8 @@ func GeoJsonToStruct(fileName string) {
 		}
 	}
 	Graph.Print()
+	log.Println("edges: ", Graph.Edges())
+	log.Println("edges len: ", len(Graph.Edges()))
 }
 
 // Check if both slice are equal

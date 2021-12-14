@@ -6,7 +6,7 @@ import (
 )
 
 type LineString struct {
-	ID       string      `json:"id"`
+	ID       string      `json:"route_id"`
 	Name     string      `json:"name"`
 	Geometry [][]float64 `json:"geometry"`
 }

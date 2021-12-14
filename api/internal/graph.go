@@ -45,7 +45,7 @@ func (g *Graph) Add(point models.Point) {
 }
 
 func (g *Graph) AddEdge(from, to int, road models.LineString) {
-	v1 := g.Vertices[from] // bug index out of range
+	v1 := g.Vertices[from]
 	v2 := g.Vertices[to]
 
 	if v1 == nil || v2 == nil {
