@@ -58,9 +58,7 @@ func GeoJsonToStruct(fileName string) {
 				features[i].Geometry.Point)
 			Graph.Add(*point)
 			point = &models.Point{}
-		}
-
-		if features[i].Geometry.IsLineString() {
+		} else if features[i].Geometry.IsLineString() {
 			lineString := models.NewLineString(features[i].Properties["route_id"].(string),
 				features[i].Properties["route_long_name"].(string),
 				features[i].Geometry.LineString)
@@ -72,9 +70,16 @@ func GeoJsonToStruct(fileName string) {
 	for i := 0; i < len(Graph.Vertices); i++ {
 		for q := i + 1; q < len(Graph.Vertices); q++ {
 			for j := 0; j < len(sliceLineString); j++ {
-				ele := getFirstAndLastCoordinates(sliceLineString[j].Geometry)
+				firstAndLastEle := getFirstAndLastCoordinates(sliceLineString[j].Geometry)
+				secondAndBeforeLastEle := getSecondAndBeforeLastCoordinates(sliceLineString[j].Geometry)
 
-				if equal(ele[0], Graph.Vertices[i].Point.Geometry) && equal(ele[1], Graph.Vertices[q].Point.Geometry) {
+				if equal(firstAndLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(firstAndLastEle[1], Graph.Vertices[q].Point.Geometry) {
+					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
+				} else if equal(secondAndBeforeLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(secondAndBeforeLastEle[1], Graph.Vertices[q].Point.Geometry) {
+					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
+				} else if equal(firstAndLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(secondAndBeforeLastEle[1], Graph.Vertices[q].Point.Geometry) {
+					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
+				} else if equal(secondAndBeforeLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(firstAndLastEle[1], Graph.Vertices[q].Point.Geometry) {
 					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
 				}
 			}
@@ -82,7 +87,7 @@ func GeoJsonToStruct(fileName string) {
 	}
 	Graph.Print()
 	log.Println("edges: ", Graph.Edges())
-	log.Println("edges len: ", len(Graph.Edges()))
+	log.Println("len of edges: ", len(Graph.Edges()))
 }
 
 // Check if both slice are equal
@@ -103,6 +108,13 @@ func getFirstAndLastCoordinates(lineStringGeometry [][]float64) [][]float64 {
 	var coordinates [][]float64
 	coordinates = append(coordinates, lineStringGeometry[0])
 	coordinates = append(coordinates, lineStringGeometry[len(lineStringGeometry)-1])
+	return coordinates
+}
+
+func getSecondAndBeforeLastCoordinates(lineStringGeometry [][]float64) [][]float64 {
+	var coordinates [][]float64
+	coordinates = append(coordinates, lineStringGeometry[1])
+	coordinates = append(coordinates, lineStringGeometry[len(lineStringGeometry)-2])
 	return coordinates
 }
 
