@@ -18,6 +18,7 @@ type Vertice struct {
 	Ajdacentes map[int]*models.LineString `json:   "adjacentes"`
 }
 
+// graph constructor
 func NewGraph(directed bool) *Graph {
 	if directed {
 		return &Graph{
@@ -27,10 +28,12 @@ func NewGraph(directed bool) *Graph {
 	return &Graph{}
 }
 
+// each vertex has his own identifier
 var (
 	id int = -1
 )
 
+// append a vertex to the graph
 func (g *Graph) Add(point models.Point) {
 	if !contains(g.Vertices, point.Name) {
 		id++
@@ -44,6 +47,7 @@ func (g *Graph) Add(point models.Point) {
 	}
 }
 
+// add edge between two vertices
 func (g *Graph) AddEdge(from, to int, road models.LineString) {
 	v1 := g.Vertices[from]
 	v2 := g.Vertices[to]
@@ -53,15 +57,16 @@ func (g *Graph) AddEdge(from, to int, road models.LineString) {
 	}
 
 	if _, ok := v1.Ajdacentes[v2.ID]; ok {
-		fmt.Println(ok)
 		return
 	}
+
 	v1.Ajdacentes[v2.ID] = &road
 	if !g.directed {
 		v2.Ajdacentes[v1.ID] = &road
 	}
 }
 
+// return a vertice from
 func (g *Graph) GetVertexFromName(name string) *Vertice {
 	for index, value := range g.Vertices {
 		if value.Point.Name == name {
@@ -91,6 +96,7 @@ func contains(points []*Vertice, name string) bool {
 
 func (g *Graph) Print() {
 	for _, value := range g.Vertices {
+		fmt.Println()
 		fmt.Println("points: ", value)
 		for _, value := range value.Ajdacentes {
 			fmt.Println("adjacentes: ", value)
@@ -126,11 +132,22 @@ func (g *Graph) Neighbors(id int) []int {
 	return neighbors
 }
 
-func (g *Graph) Edges() [][3]int {
-	var edges = make([][3]int, 0, len(g.Vertices))
+type Edge struct {
+	IDVertex     int
+	IDAdjacente  int
+	IDLineString string
+}
+
+func (g *Graph) Edges() []Edge {
+	var edges = make([]Edge, 0, len(g.Vertices))
 	for i := 0; i < len(g.Vertices); i++ {
 		for k, v := range g.Vertices[i].Ajdacentes {
-			edges = append(edges, [3]int{i, k, int(v.Geometry[0][0])})
+			edge := Edge{
+				IDVertex:     i,
+				IDAdjacente:  k,
+				IDLineString: v.ID,
+			}
+			edges = append(edges, edge)
 		}
 	}
 	return edges
