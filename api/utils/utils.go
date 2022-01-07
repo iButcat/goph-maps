@@ -57,37 +57,34 @@ func GeoJsonToStruct(fileName string) {
 				features[i].Properties["name"].(string),
 				features[i].Geometry.Point)
 			Graph.Add(*point)
-			point = &models.Point{}
 		} else if features[i].Geometry.IsLineString() {
 			lineString := models.NewLineString(features[i].Properties["route_id"].(string),
 				features[i].Properties["route_long_name"].(string),
 				features[i].Geometry.LineString)
 			sliceLineString = append(sliceLineString, lineString)
-			lineString = &models.LineString{}
 		}
 	}
 
 	for i := 0; i < len(Graph.Vertices); i++ {
-		for q := i + 1; q < len(Graph.Vertices); q++ {
-			for j := 0; j < len(sliceLineString); j++ {
-				firstAndLastEle := getFirstAndLastCoordinates(sliceLineString[j].Geometry)
-				secondAndBeforeLastEle := getSecondAndBeforeLastCoordinates(sliceLineString[j].Geometry)
+		for j := i + 1; j < len(Graph.Vertices); j++ {
+			link(&Graph.Vertices[i].Point, &Graph.Vertices[j].Point, sliceLineString)
+		}
+	}
+	Graph.Print()
+	log.Println(len(Graph.Edges()))
+}
 
-				if equal(firstAndLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(firstAndLastEle[1], Graph.Vertices[q].Point.Geometry) {
-					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
-				} else if equal(secondAndBeforeLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(secondAndBeforeLastEle[1], Graph.Vertices[q].Point.Geometry) {
-					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
-				} else if equal(firstAndLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(secondAndBeforeLastEle[1], Graph.Vertices[q].Point.Geometry) {
-					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
-				} else if equal(secondAndBeforeLastEle[0], Graph.Vertices[i].Point.Geometry) && equal(firstAndLastEle[1], Graph.Vertices[q].Point.Geometry) {
-					Graph.AddEdge(Graph.Vertices[i].ID, Graph.Vertices[q].ID, *sliceLineString[j])
+func link(point1, point2 *models.Point, sliceLineString []*models.LineString) {
+	for _, lineString := range sliceLineString {
+		for i := 0; i < len(lineString.Geometry); i++ {
+			for j := i + 1; j < len(lineString.Geometry); j++ {
+				if equal(lineString.Geometry[i], point1.Geometry) && equal(lineString.Geometry[j], point2.Geometry) {
+					//log.Println(point1.Name, "is connected to: ", point2.Name, "by:", lineString.Name)
+					Graph.AddEdge(Graph.GetVertexFromName(point1.Name).ID, Graph.GetVertexFromName(point2.Name).ID, *lineString)
 				}
 			}
 		}
 	}
-	Graph.Print()
-	log.Println("edges: ", Graph.Edges())
-	log.Println("len of edges: ", len(Graph.Edges()))
 }
 
 // Check if both slice are equal
@@ -101,32 +98,4 @@ func equal(a, b []float64) bool {
 		}
 	}
 	return true
-}
-
-// First array and last are the coordinate of a point.
-func getFirstAndLastCoordinates(lineStringGeometry [][]float64) [][]float64 {
-	var coordinates [][]float64
-	coordinates = append(coordinates, lineStringGeometry[0])
-	coordinates = append(coordinates, lineStringGeometry[len(lineStringGeometry)-1])
-	return coordinates
-}
-
-func getSecondAndBeforeLastCoordinates(lineStringGeometry [][]float64) [][]float64 {
-	var coordinates [][]float64
-	coordinates = append(coordinates, lineStringGeometry[1])
-	coordinates = append(coordinates, lineStringGeometry[len(lineStringGeometry)-2])
-	return coordinates
-}
-
-func checkifCoordinatesForEdges(lineStringGeometry [][]int, pointGeometry []int) bool {
-	for _, value := range lineStringGeometry {
-		for _, val := range value {
-			for _, v := range pointGeometry {
-				if val == v {
-					return true
-				}
-			}
-		}
-	}
-	return false
 }
