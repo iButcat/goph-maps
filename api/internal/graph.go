@@ -28,7 +28,7 @@ func NewGraph(directed bool) *Graph {
 	return &Graph{}
 }
 
-// each vertex has his own identifier
+// each vertex has his own id
 var (
 	id int = -1
 )
@@ -61,12 +61,9 @@ func (g *Graph) AddEdge(from, to int, road models.LineString) {
 	}
 
 	v1.Ajdacentes[v2.ID] = &road
-	if !g.directed {
-		v2.Ajdacentes[v1.ID] = &road
-	}
 }
 
-// return a vertice from
+// return a vertice from name
 func (g *Graph) GetVertexFromName(name string) *Vertice {
 	for index, value := range g.Vertices {
 		if value.Point.Name == name {
@@ -76,6 +73,7 @@ func (g *Graph) GetVertexFromName(name string) *Vertice {
 	return nil
 }
 
+// return a vertice from id
 func (g *Graph) GetVertexFromID(id int) *Vertice {
 	for index, value := range g.Vertices {
 		if value.Point.ID == id {
@@ -85,6 +83,18 @@ func (g *Graph) GetVertexFromID(id int) *Vertice {
 	return nil
 }
 
+// return the vertice from coordinates
+func (g *Graph) GetVertexFromGeo(coordinates []float64) *Vertice {
+	for index, value := range g.Vertices {
+		if value.Point.Geometry[0] == coordinates[0] &&
+			value.Point.Geometry[1] == coordinates[1] {
+			return g.Vertices[index]
+		}
+	}
+	return nil
+}
+
+// contains check a vertices exists already
 func contains(points []*Vertice, name string) bool {
 	for _, value := range points {
 		if value.Point.Name == name {
